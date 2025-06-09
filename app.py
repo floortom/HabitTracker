@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
-habits = ["Test habit", "Test habit2"]
+habits = []
 
 @app.route("/")
 def index():
