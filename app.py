@@ -10,4 +10,4 @@ def index():
 
 @app.route("/add", methods=["GET", "POST"])
 def add_habit():
-    return render_template("add_habit.html", title="Habit Tracker - Add Habit")
+    return render_template("addHabit.html", title="Habit Tracker - Add Habit")
