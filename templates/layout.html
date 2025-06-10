@@ -25,6 +25,21 @@
       <a href="{{ url_for('add_habit') }}" class="header__link">+ Add new</a>
       {% endif %}
     </header>
-    <main class="main">{% block mainContent %} {% endblock %}</main>
+    <main class="main">
+      <section class="dates">
+        {% for date in dateRange(selectedDate) %}
+        <a
+          class="dates__link {{ 'dates__link--current' if loop.index0 == 3 else '' }}"
+          href="{{ url_for('index', date=date) }}"
+        >
+          <time class="date" datetime="{{ date }}">
+            <span>{{ date.strftime("%a") }}</span>
+            <span>{{ date.strftime("%d") }}</span>
+          </time>
+        </a>
+        {% endfor %}
+      </section>
+      {% block mainContent %} {% endblock %}
+    </main>
   </body>
 </html>
