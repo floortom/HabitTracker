@@ -1,8 +1,10 @@
 import datetime
-from flask import Flask, render_template, request
+from collections import defaultdict
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
-habits = []
+habits = ["Test habit"]
+completions = defaultdict(list)
 
 @app.context_processor
 def add_calc_date_range():
@@ -21,7 +23,8 @@ def index():
     return render_template("index.html",
                            title="Habit Tracker - Home",
                            habits=habits,
-                           selectedDate=selectedDate
+                           selectedDate=selectedDate,
+                           completions=completions[selectedDate]
                            )
 
 
@@ -34,3 +37,12 @@ def add_habit():
                            title="Habit Tracker - Add Habit",
                            selectedDate=datetime.date.today()
                            )
+
+@app.post("/complete")
+def complete():
+    dateString = request.form.get("date")
+    habit = request.form.get("habitName")
+    date = datetime.date.fromisoformat(dateString)
+    completions[date].append(habit)
+
+    return redirect(url_for("index", date=dateString))
