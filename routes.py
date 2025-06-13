@@ -1,10 +1,14 @@
 import datetime
-from collections import defaultdict
-from flask import Blueprint, render_template, request, redirect, url_for
+import uuid
+from flask import Blueprint, current_app, render_template, request, redirect, url_for
 
 pages = Blueprint("habits", __name__, template_folder="templates", static_folder="static")
-habits = ["Test habit"]
-completions = defaultdict(list)
+
+
+def today_at_midnight():
+    today = datetime.datetime.today()
+    return datetime.datetime(today.year, today.month, today.day)
+
 
 @pages.context_processor
 def add_calc_date_range():
@@ -17,32 +21,45 @@ def add_calc_date_range():
 def index():
     dateStr = request.args.get("date")
     if dateStr:
-        selectedDate = datetime.date.fromisoformat(dateStr)
+        selectedDate = datetime.datetime.fromisoformat(dateStr)
     else:
-        selectedDate = datetime.date.today()
+        selectedDate = today_at_midnight()
+
+    habitsOnDate = current_app.db.habits.find({"added": {"$lte": selectedDate}})
+
+    completions = [habit["habit"] for habit in current_app.db.completions.find({"date": selectedDate})]
+
     return render_template("index.html",
                            title="Habit Tracker - Home",
-                           habits=habits,
+                           habits=habitsOnDate,
                            selectedDate=selectedDate,
-                           completions=completions[selectedDate]
+                           completions=completions
                            )
 
 
 @pages.route("/add", methods=["GET", "POST"])
 def add_habit():
-    if request.method == "POST":
-        habit = request.form.get("habit")
-        habits.append(habit)
+    today = today_at_midnight()
+
+    if request.form:
+        current_app.db.habits.insert_one(
+            {"_id": uuid.uuid4().hex,
+             "added": today,
+             "name": request.form.get("habit"),
+             }
+        )
     return render_template("addHabit.html",
                            title="Habit Tracker - Add Habit",
-                           selectedDate=datetime.date.today()
+                           selectedDate=today
                            )
 
 @pages.post("/complete")
 def complete():
     dateString = request.form.get("date")
-    habit = request.form.get("habitName")
-    date = datetime.date.fromisoformat(dateString)
-    completions[date].append(habit)
+    habit = request.form.get("habitId")
+    date = datetime.datetime.fromisoformat(dateString)
+    current_app.db.completions.insert_one({"date": date,
+                                           "habit": habit,
+                                           })
 
     return redirect(url_for(".index", date=dateString))
